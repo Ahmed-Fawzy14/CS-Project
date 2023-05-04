@@ -39,6 +39,7 @@ struct logs
     string text;
     int index_x;
     int index_y;
+    int sentence_x,sentence_y;
 };
 
 
@@ -174,7 +175,7 @@ public:
         }
         return -999;
     }
-    vector<logs> const trial(vector<char> tempy, vector<char> tempx)
+    vector<logs> const trial(vector<char> tempy, vector<char> tempx,int index_x,int index_y)
     {
         trials temp;
         string text = "", pattern = "", temps = "";
@@ -234,6 +235,8 @@ public:
                         m.text = getphrase(pattern, i);
                         m.index_x = z;
                         m.index_y =i ;
+                        m.sentence_x=index_x;
+                        m.sentence_y=index_y;
                         plagiarized.push_back(m);
                     }
                     else if(tempx.size()<=tempy.size())
@@ -242,6 +245,8 @@ public:
                             m.text = getphrase(pattern, i);
                             m.index_x = i;
                             m.index_y = z;
+                            m.sentence_x=index_x;
+                            m.sentence_y=index_y;
                             plagiarized.push_back(m);
                         
                     }
@@ -440,7 +445,7 @@ void stringmatching(brute_force& a, vector<char> pattern, int index)
         vector<char> temp = a.getsentence_filey(i);
 
 
-        vector<logs> tempI = a.trial(temp, pattern);
+        vector<logs> tempI = a.trial(temp, pattern,index,i);
 
         if (tempI.size() > 0)
         {
