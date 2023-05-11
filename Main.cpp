@@ -1,10 +1,14 @@
 #include<iostream>
 #include<unordered_set>
+#include <utility>
+
 #include "File.h"
 #include "RabinKarp.h"
 #include "RKphrases.h"
 #include "RKsentences.h"
 #include "Main.h"
+
+
 
 using namespace std;
 
@@ -60,12 +64,105 @@ void similarityPercent(string main, string c1, string c2, string c3) {
 
 }
 
+list<pair<string, string>> printPoly(unordered_map<string, string> foundPolySentences, unordered_map<string, string> foundPoly4Phrases, unordered_map<string, string> foundPoly3Phrases, unordered_map<string, string> foundPoly2Phrases, int document) {
+    list<pair<string, string>> foundList;
+    string color{};
+
+
+    if (document == 1) {
+        color = "yellow";
+    }
+    else if (document == 2) {
+        color = "blue";
+    }
+    else
+        color = "white";
+
+    if (foundPoly4Phrases.empty()) {
+        std::cout << "foundPoly4Phrases is empty!" << std::endl;
+    }
+
+    if (foundPoly3Phrases.empty()) {
+        std::cout << "foundPoly3Phrases is empty!" << std::endl;
+    }
+
+    if (foundPoly2Phrases.empty()) {
+        std::cout << "foundPoly2Phrases is empty!" << std::endl;
+    }
+
+    if (foundPolySentences.empty()) {
+        std::cout << "foundPolySentences is empty!" << std::endl;
+    }
+
+    //make first one color and second string 
+    for (auto it = foundPoly4Phrases.begin(); it != foundPoly4Phrases.end(); it++) {
+        foundList.push_back({ color , foundPoly4Phrases[it->first]});
+    }
+
+    for (auto it = foundPoly3Phrases.begin(); it != foundPoly3Phrases.end(); it++) {
+        foundList.push_back({ color , foundPoly3Phrases[it->first]});
+    }
+
+    for (auto it = foundPoly2Phrases.begin(); it != foundPoly2Phrases.end(); it++) {
+        foundList.push_back({ color , foundPoly2Phrases[it->first] });
+
+    }
+
+    for (auto it = foundPolySentences.begin(); it != foundPolySentences.end(); it++) {
+        foundList.push_back({ color , foundPolySentences[it->first]});
+
+    }
+
+
+    return foundList;
+}
+
+void printFinger() {
+
+
+}
+
+
+vector<wstring> RabinKarp::stem(string str, int i, vector<wstring> w) {
+    if (i >= str.size()) {
+        return w;
+    }
+    string strShort{};
+    strShort = calcBound(str, i, 1);
+    strShort = oneremoveSpaces(strShort, 1);
+    stemming::english_stem<> StemEnglish;
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter; // create a converter object
+
+    wstring wide_str = converter.from_bytes(strShort); // convert narrow string to wide string
+    StemEnglish(wide_str);
+
+    w.push_back(wide_str);
+
+    return stem(str, i, w);
+}
+
+wstring RabinKarp::stem(string str) {
+    string strShort{};
+    strShort = oneCalcBound(str, 1);
+    strShort = oneremoveSpaces(str, 1);
+    stemming::english_stem<> StemEnglish;
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter; // create a converter object
+
+    wstring wide_str = converter.from_bytes(strShort); // convert narrow string to wide string
+    StemEnglish(wide_str);
+
+  //  stem(str, i);
+
+    return wide_str;
+}
+
 
 void runProgram() {
 
     //objects
     Phrases p;
     Sentences s;
+    RabinKarp rk;
 
     //maps
     unordered_map<string, string> found = {};
@@ -74,6 +171,7 @@ void runProgram() {
     unordered_map<string, string> foundPoly2Phrases = {};
     unordered_map<string, string> foundPolySentences = {};
 
+    list<pair<string, string>> foundList;
 
 
     //files
@@ -89,7 +187,12 @@ void runProgram() {
     ifstream infile("Sus.txt");
     string main = p.readFile(&infile);
 
+    vector<wstring> w;
 
+
+    w = rk.stem(main, 0, w);
+//I have sent the main now I need to make w work with everyhitng else 
+    
 
     //found = rabinKarp(main, c1, c2, c3);
 
@@ -100,6 +203,9 @@ void runProgram() {
     foundPolySentences = s.rabinKarpPolySentences(main, c1, c2, c3);
 
 
+    //firgure out how to send doucment 
+    foundList = printPoly(foundPolySentences, foundPoly4Phrases, foundPoly3Phrases, foundPoly2Phrases, 0);
+
     //fingerprint
     //figure out how to writw this normally 
     /* for (auto it = found.begin(); it != found.end(); it++) {
@@ -108,28 +214,7 @@ void runProgram() {
      }*/
 
 
-     //need to create a print function
-    //foundPolyPhrases print 
-      for (auto it = foundPoly4Phrases.begin(); it != foundPoly4Phrases.end(); it++) {
-          cout << it->first << '\t' << it->second << endl;
 
-      }
-
-      for (auto it = foundPoly3Phrases.begin(); it != foundPoly3Phrases.end(); it++) {
-          cout << it->first << '\t' << it->second << endl;
-
-      }
-
-      for (auto it = foundPoly2Phrases.begin(); it != foundPoly2Phrases.end(); it++) {
-          cout << it->first << '\t' << it->second << endl;
-
-      }
-
-      //foundPolySentences print 
-      for (auto it = foundPolySentences.begin(); it != foundPolySentences.end(); it++) {
-          cout << it->first << '\t' << it->second << endl;
-
-      }
 
       similarityPercent(main, c1, c2, c3);
 

@@ -1,10 +1,45 @@
 #include <fstream>
 #include <string>
 #include "File.h"
+
 using namespace std;
 
+// Implementation of the readFile member function for the string data type of the file class.
+// Returns nothing becuase file is an abstract class
 template <>
 string file<string>::readFile() const
 {
-	return "Ahmed";
+	return "";
+}
+
+// Implementation of the getFile_x member function for the file class.
+// Returns a reference to the file_x object.
+template<typename T>
+ifstream& file<T>::getFile_x() const
+{
+	return file_x;
+}
+
+// Implementation of the getFile_y member function for the file class.
+// Returns a reference to the file_y object.
+template<typename T>
+ifstream& file<T>::getFile_y() const
+{
+	return file_y;
+}
+
+// Implementation of the setFile_x member function for the file class.
+// Creates and opens the given fileName parameter with file_x object.
+template<typename T>
+void file<T>::setFile_x(string fileName)
+{
+	file_x.open(fileName);
+}
+
+// Implementation of the setFile_y member function for the file class.
+// Creates and opens the given fileName parameter with file_y object.
+template<typename T>
+void file<T>::setFile_y(string fileName)
+{
+	file_y.open(fileName);
 }
