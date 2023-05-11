@@ -4,8 +4,11 @@
 #include"RabinKarp.h"
 using namespace std;
 
+//Constructor than initializes variables 
+RabinKarp::RabinKarp() :mainIndex{ 0 }, corpus1Index{ 0 }, mainIndexPrint{ 0 }, corpus1IndexPrint{ 0 }, hashCsub{ 0 }, hashMsub{ 0 }, words{ 0 }, mainFile{}, corpusFile{}, isMatch{ false } {}
 
-//reads file and returns string with file data
+
+//reads file and returns string with file content
 string RabinKarp::readFile(ifstream* infile) const {
     
         string line, temp;
@@ -15,33 +18,82 @@ string RabinKarp::readFile(ifstream* infile) const {
         return line;
 }
 
+
+// Double hashing
+int RabinKarp :: doubleHashPoly(string str, int i, int m, int p, int q){
+    int h1 = RollingQuadraticHashFunction(str, p, m);
+    int h2 = djb2Hash(str);
+    int offset = q - (h2 % q);
+    return (h1 + i * offset) % m;
+}
+
+int RabinKarp :: doubleHashFinger(string str, int i, int m, int p, int q){
+    int h1 = FingerprintRollingHashFunction(str, p, m);
+    int h2 = djb2Hash(str);
+    int offset = q - (h2 % q);
+    return (h1 + i * offset) % m;
+}
+
+//djb2Hash double hash functions
+ long RabinKarp :: djb2Hash(const string& str) {
+    unsigned long hash = 5381;
+    for (char c : str) {
+        hash = ((hash << 5) + hash) + c; 
+    }
+    return hash;
+}
+
  //fingerprint hash
- int RabinKarp::FingerprintHashFunction(string str, long long p, long long x)
- {
+ int RabinKarp::FingerprintRollingHashFunction(string str, long long p, long long x) {
      int result = 0;
-     for (int i = 0; i < str.length(); i++) {
+     int n = str.length();
+     int power = 1;
+
+     // Calculate x^n
+     for (int i = 0; i < n - 1; i++) {
+         power = (power * x) % p;
+     }
+
+     // Calculate the hash value
+     for (int i = 0; i < n; i++) {
          result = (result * x + str[i]) % p;
+         if (i >= n - 1) {
+             // Subtract the contribution of the i-n character and add the contribution of the i+1 character
+             int prev_char = str[i - n + 1];
+             result = (result - prev_char * power) % p;
+             if (result < 0) {
+                 result += p;
+             }
+         }
      }
+
      return result;
-     return 0;
  }
 
- //polyynomial hash
 
- int RabinKarp::QuadraticHashFunction(string str, long long p, long long x)
- {
+
+ //Quadratic hash
+ int RabinKarp::RollingQuadraticHashFunction(string str, long long p, long long x) {
      int result = 0;
+     int x_pow = 1;
      for (int i = 0; i < str.length(); i++) {
-         //do not count punctuation aswell
-         if (str[i] != ' ' && str[i] != '.' && str[i] != '?' && str[i] != '!' && str[i] != '(' && str[i] != ')' && str[i] != '[' && str[i] != ']' && str[i] != '\0')
-             result = (result * x + str[i]) % p;
+         if (str[i] == 's' && str[i + 1] == ' ') {
+             continue; // Skip "s " characters
+         }
+         if (str[i] != ' ' && str[i] != '.' && str[i] != '?' && str[i] != '!' && str[i] != '(' && str[i] != ')' && str[i] != '[' && str[i] != ']' && str[i] != '\0') {
+             result = (result + ((str[i] - 'a' + 1) * x_pow) % p) % p;
+             x_pow = (x_pow * x) % p;
+         }
      }
      return result;
  }
 
 
+ 
+
+ //Setters 
  void RabinKarp::setHash(int x) {
-     hash = x;
+     hashMsub = x;
  }
 
  void RabinKarp::setWords(int x) {
@@ -129,8 +181,9 @@ string RabinKarp::readFile(ifstream* infile) const {
  }
 
 
+ //Getters
  int RabinKarp::getHash() const {
-     return hash;
+     return hashMsub;
  }
 
  int RabinKarp::getWords() const {
@@ -219,13 +272,20 @@ string RabinKarp::readFile(ifstream* infile) const {
      return found;
  }
 
+
+ //function that removes any space characters from string for the parameter word length of the phrase for the given index
  string RabinKarp::removeSpaces(string str, int& i, int words) const
  {
+     //Counter that ends while loop when number of words in phrase is reached
      int x = 0;
+     //String that is returned as the custom substring
      string sub{};
+     //Char type used to remove make all chars lower case
      char c;
 
+     //As long as words per phrase was not reached and the words in the file string are not done while loop will loop
      while (x < words && i <= str.length()) {
+        //when space is found do not return it 
          if (str[i] == ' ' && str[i + 1] != ' ') {
              x++;
              i++;
@@ -243,25 +303,53 @@ string RabinKarp::readFile(ifstream* infile) const {
 
  }
 
+ string RabinKarp::oneremoveSpaces(string str, int words) const
+ {
+     //Counter that ends while loop when number of words in phrase is reached
+     int x = 0;
+     int i = 0; 
+     //String that is returned as the custom substring
+     string sub{};
+     //Char type used to remove make all chars lower case
+     char c;
+
+     //As long as words per phrase was not reached and the words in the file string are not done while loop will loop
+     while (x < words && i <= str.length()) {
+         //when space is found do not return it 
+         if (str[i] == ' ' && str[i + 1] != ' ') {
+             x++;
+             i++;
+         }
+         else {
+             c = tolower(str[i]);
+             sub = sub + c;
+             i++;
+
+         }
+
+     }
+
+     return sub;
+
+ }
 
  string RabinKarp::removeSpaces(string str, int& i) const
  {
+     //Counter that ends while loop when a sentence or part of sentence is reached
      int x = 0;
+     //String that is returned as the custom substring
      string sub{};
+     //Char type used to remove make all chars lower case
      char c;
 
-     //when meeting punctuation counting the word after as a word if no space? "i am amazing.ahmed vs i am amazing. Ahmed
-
-     //now i am trying to detect by sentences 
-
-     //check using the words var multiple word size and sentences to increase chance of finding smth
-     //we need to comine both algorithms to have the best chance of detecitng plagarism 
-     //combine sentences with phrases 
+    //When one sentence or part of sentence is reached
      while (x < 1) {
-
+         
+         //when space is found do not return it 
          if (str[i] == ' ' && str[i + 1] != ' ') {
              i++;
          }
+         //when punctuation is found increase x
          if (str[i] == '.' || str[i] == '?' || str[i] == ',' || str[i] == ';' || str[i] == '!')
          {
              x++;
@@ -283,20 +371,51 @@ string RabinKarp::readFile(ifstream* infile) const {
 
  }
 
+ string RabinKarp::oneCalcBound(string str, int words) const
+ {
+     //wprd counter
+     int x = 0;
+     int i = 0;
+     string sub{};
+     char c;
+
+     //As long as words per phrase was not reached and the words in the file string are not done while loop will loop
+     while (x < words && i <= str.length()) {
+         //condition that detects a word and increments the number of words 
+         if (str[i] == ' ' && str[i + 1] != ' ')
+         {
+             x++;
+             c = tolower(str[i]);
+             sub = sub + c;
+             i++;
+         }
+
+         else
+         {
+
+             c = tolower(str[i]);
+             sub = sub + c;
+             i++;
+         }
+     }
 
 
 
- //Generate custom substrings using phrases
+     return sub;
+ }
 
+
+ //Generate custom substrings using words in value to determine the number of words per phrase
  string RabinKarp::calcBound(string str, int& i, int words) const
  {
+     //wprd counter
      int x = 0;
      string sub{};
      char c;
 
-     //when meeting punctuation counting the word after as a word if no space? "i am amazing.ahmed vs i am amazing. Ahmed
-
+     //As long as words per phrase was not reached and the words in the file string are not done while loop will loop
      while (x < words && i <= str.length()) {
+        //condition that detects a word and increments the number of words 
          if (str[i] == ' ' && str[i + 1] != ' ')
          {
              x++;
@@ -320,15 +439,16 @@ string RabinKarp::readFile(ifstream* infile) const {
  }
 
  //Generate custom substrings using sentences
-
  string RabinKarp::calcBound(string str, int& i) const
  {
+     //sentance counter
      int x = 0;
      string sub{};
      char c;
 
 
      while (x < 1) {
+         //condition that detects a sentence and increments ands loop by incrementing x 
          if (str[i] == '.' || str[i] == '?' || str[i] == ',' || str[i] == ';' || str[i] == '!')
          {
              x++;
